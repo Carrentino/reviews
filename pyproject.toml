@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "base"
+name = "reviews"
 package-mode = false
 version = "0.1.0"
 
@@ -53,7 +53,6 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::UserWarning"
 ]
-addopts = "-vv -ss --tb=short" #  --alluredir allure-results
 asyncio_mode = "auto"
 env = [
     "AUTH_ENVIRONMENT=pytest",
