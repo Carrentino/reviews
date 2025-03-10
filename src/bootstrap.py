@@ -55,7 +55,7 @@ def setup_prometheus(app: FastAPI) -> None:
 
 def make_app() -> FastAPI:
     app = FastAPI(
-        title='base',
+        title='reviews',
         lifespan=_lifespan,
         docs_url='/api/docs',
         redoc_url='/api/redoc',
