@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories.car_review import CarReviewRepository
 from src.repositories.car_review_like import CarReviewLikeRepository
 from src.repositories.car_review_reply import CarReviewReplyRepository
+from src.repositories.user_review import UserReviewRepository
+from src.repositories.user_review_like import UserReviewLikeRepository
+from src.repositories.user_review_reply import UserReviewReplyRepository
 
 
 async def get_car_review_repository(session: Annotated[AsyncSession, Depends(get_db_session)]) -> CarReviewRepository:
@@ -23,3 +26,19 @@ async def get_car_review_reply_repository(
     session: Annotated[AsyncSession, Depends(get_db_session)]
 ) -> CarReviewReplyRepository:
     return CarReviewReplyRepository(session)
+
+
+async def get_user_review_repository(session: Annotated[AsyncSession, Depends(get_db_session)]) -> UserReviewRepository:
+    return UserReviewRepository(session)
+
+
+async def get_user_review_like_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)]
+) -> UserReviewLikeRepository:
+    return UserReviewLikeRepository(session)
+
+
+async def get_user_review_reply_repository(
+    session: Annotated[AsyncSession, Depends(get_db_session)]
+) -> UserReviewReplyRepository:
+    return UserReviewReplyRepository(session)
