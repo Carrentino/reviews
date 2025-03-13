@@ -5,36 +5,36 @@ from helpers.sqlalchemy.base_repo import ISqlAlchemyRepository
 from sqlalchemy import func, select, desc, asc
 from sqlalchemy.orm import selectinload
 
-from src.db.models.cars import CarReview, CarReviewLike
-from src.web.api.enums import SortType, SortOrder
+from src.db.models.users import UserReview, UserReviewLike
+from src.web.api.enums import SortOrder, SortType
 from src.web.api.schemas import PaginationSchema
 
 
-class CarReviewRepository(ISqlAlchemyRepository[CarReview]):
-    _model = CarReview
+class UserReviewRepository(ISqlAlchemyRepository[UserReview]):
+    _model = UserReview
 
     async def get_reviews(
         self,
-        car_id: UUID,
+        user_id: UUID,
         pagination: PaginationSchema,
-        user_id: UUID | None = None,
+        current_user_id: UUID | None = None,
     ) -> tuple[list[dict[str, bool | Any]], Any | None]:
-        likes_count = func.count(CarReviewLike.id).label("likes_count")
-        is_liked = func.coalesce(func.bool_or(CarReviewLike.user_id == user_id), False).label("is_liked")
+        likes_count = func.count(UserReviewLike.id).label("likes_count")
+        is_liked = func.coalesce(func.bool_or(UserReviewLike.user_id == current_user_id), False).label("is_liked")
 
         query = (
-            select(CarReview.id, CarReview, likes_count, is_liked)
-            .where(CarReview.car_id == car_id)
-            .outerjoin(CarReviewLike, CarReview.id == CarReviewLike.car_review_id)
-            .options(selectinload(CarReview.reply))
-            .group_by(CarReview.id)
+            select(UserReview.id, UserReview, likes_count, is_liked)
+            .where(UserReview.user_id == user_id)
+            .outerjoin(UserReviewLike, UserReview.id == UserReviewLike.user_review_id)
+            .options(selectinload(UserReview.reply))
+            .group_by(UserReview.id)
         )
 
         if pagination.sort == SortType.POPULARITY:
             order_by = desc(likes_count) if pagination.sort_order == SortOrder.DESC else asc(likes_count)
         else:
             order_by = (
-                desc(CarReview.created_at) if pagination.sort_order == SortOrder.DESC else asc(CarReview.created_at)
+                desc(UserReview.created_at) if pagination.sort_order == SortOrder.DESC else asc(UserReview.created_at)
             )
         count_query = paginated_query = query
         count_query = select(func.count()).select_from(count_query.subquery().alias("subq"))
@@ -51,7 +51,7 @@ class CarReviewRepository(ISqlAlchemyRepository[CarReview]):
                 {
                     "review": row[1],
                     "likes_count": row[2],
-                    "is_liked": row[3] if user_id else False,
+                    "is_liked": row[3] if current_user_id else False,
                 }
             )
 
