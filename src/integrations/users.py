@@ -3,8 +3,10 @@ from uuid import UUID
 
 import httpx
 from helpers.clients.http_client import BaseApiClient
+from helpers.kafka.producer import KafkaProducer
 from helpers.redis_client.client import RedisClient
 
+from src.integrations.schemas.users import UsersChangeScoreSchema
 from src.settings import get_settings
 
 
@@ -35,3 +37,13 @@ class UsersClient(BaseApiClient):
                 rc.set(item['id'], data)
                 user_data[item['id']] = data
         return user_data
+
+
+class UsersKafkaProducer(KafkaProducer):
+    score_topic = get_settings().kafka.topic_users_score
+
+    def __init__(self) -> None:
+        super().__init__(str(get_settings().kafka.users_url))
+
+    async def send_score(self, message: UsersChangeScoreSchema) -> None:
+        await self.send_model_message(self.score_topic, message)

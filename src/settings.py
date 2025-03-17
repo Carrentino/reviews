@@ -18,6 +18,23 @@ class RedisSettings(BaseSettings):
     )
 
 
+class KafkaSettings(BaseSettings):
+    cars_url: str
+    topic_cars_score: str
+    users_url: str
+    topic_users_score: str
+
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_file_encoding='utf-8',
+        str_strip_whitespace=True,
+        validate_default=True,
+        case_sensitive=False,
+        extra='ignore',
+        env_prefix='kafka_',
+    )
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file='.env',
@@ -49,6 +66,8 @@ class Settings(BaseSettings):
     trace_id_header: str = 'X-Trace-Id'
     jwt_key: SecretStr = Field(default=SecretStr('551b8ef09b5e43ddcc45461f854a89b83b9277c6e578f750bf5a6bc3f06d8c08'))
     redis: RedisSettings = RedisSettings()
+    kafka: KafkaSettings = KafkaSettings()
+    orders_url: str
 
 
 @lru_cache
