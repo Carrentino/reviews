@@ -68,6 +68,7 @@ class Settings(BaseSettings):
     redis: RedisSettings = RedisSettings()
     kafka: KafkaSettings = KafkaSettings()
     orders_url: str
+    cars_url: str
 
 
 @lru_cache

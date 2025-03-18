@@ -16,3 +16,9 @@ class CreateReviewSchema(BaseModel):
 class CreateReviewResp(BaseModel):
     id: UUID
     type: ReviewType
+
+
+class CreateReviewReplySchema(BaseModel):
+    type: ReviewType
+    review_id: UUID
+    description: str

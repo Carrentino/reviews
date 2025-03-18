@@ -1,4 +1,4 @@
-from src.integrations.cars import CarsKafkaProducer
+from src.integrations.cars import CarsKafkaProducer, CarsClient
 from src.integrations.orders import OrdersClient
 from src.integrations.users import UsersClient, UsersKafkaProducer
 
@@ -17,3 +17,7 @@ async def get_cars_kafka() -> CarsKafkaProducer:
 
 async def get_orders_client() -> OrdersClient:
     return OrdersClient()
+
+
+async def get_cars_client() -> CarsClient:
+    return CarsClient()

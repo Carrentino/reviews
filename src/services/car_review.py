@@ -1,8 +1,8 @@
 from uuid import UUID
 
-from src.db.models.cars import CarReview
-from src.errors.service import UserHasNotOrderWithCarError
-from src.integrations.cars import CarsKafkaProducer
+from src.db.models.cars import CarReview, CarReviewReply
+from src.errors.service import UserHasNotOrderWithCarError, ReviewNotFoundError, UserIsNotOwnerError
+from src.integrations.cars import CarsKafkaProducer, CarsClient
 from src.integrations.orders import OrdersClient
 from src.integrations.schemas.cars import CarsChangeScoreSchema
 from src.integrations.users import UsersClient
@@ -12,7 +12,7 @@ from src.repositories.car_review_reply import CarReviewReplyRepository
 from src.services.base import BaseReviewService
 from src.web.api.cars.schemas import CarReviewSchema
 from src.web.api.common.enums import ReviewType
-from src.web.api.common.schemas import CreateReviewSchema, CreateReviewResp
+from src.web.api.common.schemas import CreateReviewSchema, CreateReviewResp, CreateReviewReplySchema
 from src.web.api.schemas import ReviewReplySchema, AuthorSchema
 
 
@@ -25,6 +25,7 @@ class CarReviewService(BaseReviewService):
         users_client: UsersClient,
         orders_client: OrdersClient,
         cars_kafka: CarsKafkaProducer,
+        cars_client: CarsClient,
     ) -> None:
         self.review_repository = car_review_repository
         self.car_review_like_repository = car_review_like_repository
@@ -32,6 +33,7 @@ class CarReviewService(BaseReviewService):
         self.users_client = users_client
         self.orders_client = orders_client
         self.cars_kafka = cars_kafka
+        self.cars_client = cars_client
 
     @staticmethod
     async def generate_schema(item: dict, author: AuthorSchema, reply: ReviewReplySchema) -> CarReviewSchema:
@@ -62,5 +64,22 @@ class CarReviewService(BaseReviewService):
         await self.cars_kafka.send_score(change_score_msg)
         return CreateReviewResp(
             id=review_id,
+            type=ReviewType.CAR,
+        )
+
+    async def create_review_reply(self, user_id: UUID, req: CreateReviewReplySchema) -> CreateReviewResp:
+        review = await self.review_repository.get(req.review_id)
+        if review is None:
+            raise ReviewNotFoundError
+        car = await self.cars_client.get_car(review.car_id)
+        if car.get('owner_id', '') != str(user_id):
+            raise UserIsNotOwnerError
+        reply = CarReviewReply(
+            car_review_id=req.review_id,
+            description=req.description,
+        )
+        reply_id = await self.car_review_reply_repository.create(reply)
+        return CreateReviewResp(
+            id=reply_id,
             type=ReviewType.CAR,
         )
