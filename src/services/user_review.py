@@ -1,7 +1,7 @@
 from uuid import UUID
 
-from src.db.models.users import UserReview
-from src.errors.service import UserHasNotOrderWithUserError
+from src.db.models.users import UserReview, UserReviewReply
+from src.errors.service import UserHasNotOrderWithUserError, ReviewNotFoundError, UserIsNotOwnerError
 from src.integrations.orders import OrdersClient
 from src.integrations.schemas.users import UsersChangeScoreSchema
 from src.integrations.users import UsersClient, UsersKafkaProducer
@@ -10,7 +10,7 @@ from src.repositories.user_review_like import UserReviewLikeRepository
 from src.repositories.user_review_reply import UserReviewReplyRepository
 from src.services.base import BaseReviewService
 from src.web.api.common.enums import ReviewType
-from src.web.api.common.schemas import CreateReviewResp, CreateReviewSchema
+from src.web.api.common.schemas import CreateReviewResp, CreateReviewSchema, CreateReviewReplySchema
 from src.web.api.schemas import ReviewReplySchema, AuthorSchema
 from src.web.api.users.schemas import UserReviewSchema
 
@@ -61,5 +61,21 @@ class UserReviewService(BaseReviewService):
         await self.users_kafka.send_score(change_score_msg)
         return CreateReviewResp(
             id=review_id,
+            type=ReviewType.USER,
+        )
+
+    async def create_review_reply(self, user_id: UUID, req: CreateReviewReplySchema) -> CreateReviewResp:
+        review = await self.review_repository.get(req.review_id)
+        if review is None:
+            raise ReviewNotFoundError
+        if review.user_id != user_id:
+            raise UserIsNotOwnerError
+        reply = UserReviewReply(
+            user_review_id=req.review_id,
+            description=req.description,
+        )
+        reply_id = await self.user_review_reply_repository.create(reply)
+        return CreateReviewResp(
+            id=reply_id,
             type=ReviewType.USER,
         )

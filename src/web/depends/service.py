@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.integrations.cars import CarsKafkaProducer
+from src.integrations.cars import CarsKafkaProducer, CarsClient
 from src.integrations.orders import OrdersClient
 from src.integrations.users import UsersClient, UsersKafkaProducer
 from src.repositories.car_review import CarReviewRepository
@@ -13,7 +13,13 @@ from src.repositories.user_review_like import UserReviewLikeRepository
 from src.repositories.user_review_reply import UserReviewReplyRepository
 from src.services.car_review import CarReviewService
 from src.services.user_review import UserReviewService
-from src.web.depends.integrations import get_users_client, get_orders_client, get_users_kafka, get_cars_kafka
+from src.web.depends.integrations import (
+    get_users_client,
+    get_orders_client,
+    get_users_kafka,
+    get_cars_kafka,
+    get_cars_client,
+)
 from src.web.depends.repository import (
     get_car_review_repository,
     get_car_review_reply_repository,
@@ -31,6 +37,7 @@ async def get_car_review_service(
     users_client: Annotated[UsersClient, Depends(get_users_client)],
     orders_client: Annotated[OrdersClient, Depends(get_orders_client)],
     cars_kafka: Annotated[CarsKafkaProducer, Depends(get_cars_kafka)],
+    cars_client: Annotated[CarsClient, Depends(get_cars_client)],
 ) -> CarReviewService:
     return CarReviewService(
         car_review_repository=car_review_repository,
@@ -39,6 +46,7 @@ async def get_car_review_service(
         users_client=users_client,
         orders_client=orders_client,
         cars_kafka=cars_kafka,
+        cars_client=cars_client,
     )
 
 
