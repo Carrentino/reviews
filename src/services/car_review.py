@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from src.db.models.cars import CarReview, CarReviewReply
+from src.db.models.cars import CarReview, CarReviewReply, CarReviewLike
 from src.errors.service import UserHasNotOrderWithCarError, ReviewNotFoundError, UserIsNotOwnerError
 from src.integrations.cars import CarsKafkaProducer, CarsClient
 from src.integrations.orders import OrdersClient
@@ -67,15 +67,17 @@ class CarReviewService(BaseReviewService):
             type=ReviewType.CAR,
         )
 
-    async def create_review_reply(self, user_id: UUID, req: CreateReviewReplySchema) -> CreateReviewResp:
-        review = await self.review_repository.get(req.review_id)
+    async def create_review_reply(
+        self, user_id: UUID, req: CreateReviewReplySchema, review_id: UUID
+    ) -> CreateReviewResp:
+        review = await self.review_repository.get(review_id)
         if review is None:
             raise ReviewNotFoundError
         car = await self.cars_client.get_car(review.car_id)
         if car.get('owner_id', '') != str(user_id):
             raise UserIsNotOwnerError
         reply = CarReviewReply(
-            car_review_id=req.review_id,
+            car_review_id=review_id,
             description=req.description,
         )
         reply_id = await self.car_review_reply_repository.create(reply)
@@ -83,3 +85,17 @@ class CarReviewService(BaseReviewService):
             id=reply_id,
             type=ReviewType.CAR,
         )
+
+    async def like_review(self, user_id: UUID, review_id: UUID) -> None:
+        review = await self.review_repository.get(review_id)
+        if review is None:
+            raise ReviewNotFoundError
+        review_like = await self.car_review_like_repository.get_one_by(user_id=user_id, car_review_id=review_id)
+        if review_like is None:
+            review_like = CarReviewLike(
+                user_id=user_id,
+                car_review_id=review_id,
+            )
+            await self.car_review_like_repository.create(review_like)
+        else:
+            await self.car_review_like_repository.delete(review_like.id)
