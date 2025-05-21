@@ -20,5 +20,8 @@ class CreateReviewResp(BaseModel):
 
 class CreateReviewReplySchema(BaseModel):
     type: ReviewType
-    review_id: UUID
     description: str
+
+
+class LikeReviewReq(BaseModel):
+    type: ReviewType

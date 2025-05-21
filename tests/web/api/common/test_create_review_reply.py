@@ -17,8 +17,8 @@ async def test_create_car_review_reply_ok(
 ) -> None:
     review = await CarReviewFactory.create()
     mock_get.return_value = {'owner_id': user_context.user_id}
-    req = CreateReviewReplySchema(type=ReviewType.CAR, review_id=review.id, description='test')
-    response = await auth_client.post('/api/common/review/reply/', json=req.model_dump(mode='json'))
+    req = CreateReviewReplySchema(type=ReviewType.CAR, description='test')
+    response = await auth_client.post(f'/api/common/review/{review.id}/reply/', json=req.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED
 
 
@@ -28,7 +28,7 @@ async def test_create_car_review_reply_nf(
 ) -> None:
     mock_get.return_value = {'owner_id': user_context.user_id}
     req = CreateReviewReplySchema(type=ReviewType.CAR, review_id=uuid4(), description='test')
-    response = await auth_client.post('/api/common/review/reply/', json=req.model_dump(mode='json'))
+    response = await auth_client.post(f'/api/common/review/{uuid4()}/reply/', json=req.model_dump(mode='json'))
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -36,26 +36,26 @@ async def test_create_car_review_reply_nf(
 async def test_create_car_review_reply_fb(mock_get: AsyncMock, auth_client: AsyncClient) -> None:
     review = await CarReviewFactory.create()
     mock_get.return_value = {'owner_id': str(uuid4())}
-    req = CreateReviewReplySchema(type=ReviewType.CAR, review_id=review.id, description='test')
-    response = await auth_client.post('/api/common/review/reply/', json=req.model_dump(mode='json'))
+    req = CreateReviewReplySchema(type=ReviewType.CAR, description='test')
+    response = await auth_client.post(f'/api/common/review/{review.id}/reply/', json=req.model_dump(mode='json'))
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_create_user_review_reply_ok(user_context: UserContext, auth_client: AsyncClient) -> None:
     review = await UserReviewFactory.create(user_id=UUID(user_context.user_id))
-    req = CreateReviewReplySchema(type=ReviewType.USER, review_id=review.id, description='test')
-    response = await auth_client.post('/api/common/review/reply/', json=req.model_dump(mode='json'))
+    req = CreateReviewReplySchema(type=ReviewType.USER, description='test')
+    response = await auth_client.post(f'/api/common/review/{review.id}/reply/', json=req.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED
 
 
 async def test_create_user_review_reply_nf(auth_client: AsyncClient) -> None:
-    req = CreateReviewReplySchema(type=ReviewType.USER, review_id=uuid4(), description='test')
-    response = await auth_client.post('/api/common/review/reply/', json=req.model_dump(mode='json'))
+    req = CreateReviewReplySchema(type=ReviewType.USER, description='test')
+    response = await auth_client.post(f'/api/common/review/{uuid4()}/reply/', json=req.model_dump(mode='json'))
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 async def test_create_user_review_reply_fb(auth_client: AsyncClient) -> None:
     review = await UserReviewFactory.create()
-    req = CreateReviewReplySchema(type=ReviewType.USER, review_id=review.id, description='test')
-    response = await auth_client.post('/api/common/review/reply/', json=req.model_dump(mode='json'))
+    req = CreateReviewReplySchema(type=ReviewType.USER, description='test')
+    response = await auth_client.post(f'/api/common/review/{review.id}/reply/', json=req.model_dump(mode='json'))
     assert response.status_code == status.HTTP_403_FORBIDDEN

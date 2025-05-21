@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from src.db.models.users import UserReview, UserReviewReply
+from src.db.models.users import UserReview, UserReviewReply, UserReviewLike
 from src.errors.service import UserHasNotOrderWithUserError, ReviewNotFoundError, UserIsNotOwnerError
 from src.integrations.orders import OrdersClient
 from src.integrations.schemas.users import UsersChangeScoreSchema
@@ -64,14 +64,16 @@ class UserReviewService(BaseReviewService):
             type=ReviewType.USER,
         )
 
-    async def create_review_reply(self, user_id: UUID, req: CreateReviewReplySchema) -> CreateReviewResp:
-        review = await self.review_repository.get(req.review_id)
+    async def create_review_reply(
+        self, user_id: UUID, req: CreateReviewReplySchema, review_id: UUID
+    ) -> CreateReviewResp:
+        review = await self.review_repository.get(review_id)
         if review is None:
             raise ReviewNotFoundError
         if review.user_id != user_id:
             raise UserIsNotOwnerError
         reply = UserReviewReply(
-            user_review_id=req.review_id,
+            user_review_id=review_id,
             description=req.description,
         )
         reply_id = await self.user_review_reply_repository.create(reply)
@@ -79,3 +81,17 @@ class UserReviewService(BaseReviewService):
             id=reply_id,
             type=ReviewType.USER,
         )
+
+    async def like_review(self, user_id: UUID, review_id: UUID) -> None:
+        review = await self.review_repository.get(review_id)
+        if review is None:
+            raise ReviewNotFoundError
+        review_like = await self.user_review_like_repository.get_one_by(user_id=user_id, user_review_id=review_id)
+        if review_like is None:
+            review_like = UserReviewLike(
+                user_id=user_id,
+                user_review_id=review_id,
+            )
+            await self.user_review_like_repository.create(review_like)
+        else:
+            await self.user_review_like_repository.delete(review_like.id)
