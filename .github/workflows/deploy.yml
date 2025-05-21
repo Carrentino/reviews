@@ -1,4 +1,4 @@
-name: Deploy orders
+name: Deploy reviews
 
 on:
   push:
